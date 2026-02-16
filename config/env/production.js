@@ -38,7 +38,8 @@ module.exports = {
 
   sockets: {
     onlyAllowOrigins: [
-      "https://poof-expenses.onrender.com", // Replace with your ACTUAL Render URL
+      "https://poof-expenses.onrender.com",
+      "*" // Replace with your ACTUAL Render URL
     ],
     // onlyAllowOrigins: ['https://poof-expenses.onrender.com'],
   },
