@@ -6,7 +6,7 @@ module.exports = {
 
   // Disable Grunt in production to save time and memory
   hooks: {
-    grunt: false
+    
   },
 
   datastores: {
