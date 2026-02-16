@@ -1,0 +1,144 @@
+<div id="signup" v-cloak class="min-h-screen bg-[#fafaf9] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans text-[#0a0a0a]">
+  
+  <div class="sm:mx-auto sm:w-full sm:max-w-md" v-if="!cloudSuccess">
+    
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-medium tracking-tight text-[#0a0a0a]">Create an account</h1>
+      <p class="mt-2 text-sm text-[#737373]">
+        Let's get started! Becoming a member is free and only takes a few minutes.
+      </p>
+    </div>
+
+    <div class="bg-white py-8 px-4 shadow-xl border border-[rgba(0,0,0,0.08)] sm:rounded-2xl sm:px-10 relative">
+      
+      <ajax-form action="signup" :syncing.sync="syncing" :cloud-error.sync="cloudError" :form-errors.sync="formErrors" :form-data="formData" :form-rules="formRules" @submitted="submittedForm()">
+        
+        <div class="mb-5">
+          <label for="full-name" class="block text-sm font-medium text-[#0a0a0a] mb-1.5">Full name</label>
+          <input 
+            class="appearance-none block w-full px-4 py-3 rounded-lg border placeholder-[#a3a3a3] text-[#0a0a0a] focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors sm:text-sm"
+            :class="[formErrors.fullName ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : 'border-[rgba(0,0,0,0.12)] focus:border-[#c9a861] focus:ring-[#c9a861]/20']"
+            id="full-name" 
+            type="text" 
+            v-model.trim="formData.fullName" 
+            placeholder="Sturgis P. Sturgeon" 
+            autocomplete="name" 
+            focus-first
+          >
+          <div class="mt-1 text-xs text-red-600" v-if="formErrors.fullName">Please enter your full name.</div>
+        </div>
+
+        <div class="mb-5">
+          <label for="email-address" class="block text-sm font-medium text-[#0a0a0a] mb-1.5">Email address</label>
+          <input 
+            class="appearance-none block w-full px-4 py-3 rounded-lg border placeholder-[#a3a3a3] text-[#0a0a0a] focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors sm:text-sm"
+            :class="[formErrors.emailAddress ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : 'border-[rgba(0,0,0,0.12)] focus:border-[#c9a861] focus:ring-[#c9a861]/20']"
+            id="email-address" 
+            type="email" 
+            v-model.trim="formData.emailAddress" 
+            placeholder="sturgeon@example.com" 
+            autocomplete="email"
+          >
+          <div class="mt-1 text-xs text-red-600" v-if="formErrors.emailAddress">Please enter a valid email address.</div>
+        </div>
+
+        <div class="mb-5">
+          <label for="password" class="block text-sm font-medium text-[#0a0a0a] mb-1.5">Choose a password</label>
+          <input 
+            class="appearance-none block w-full px-4 py-3 rounded-lg border placeholder-[#a3a3a3] text-[#0a0a0a] focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors sm:text-sm"
+            :class="[formErrors.password ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : 'border-[rgba(0,0,0,0.12)] focus:border-[#c9a861] focus:ring-[#c9a861]/20']"
+            id="password" 
+            type="password" 
+            v-model.trim="formData.password" 
+            placeholder="••••••••" 
+            autocomplete="new-password"
+          >
+          <div class="mt-1 text-xs text-red-600" v-if="formErrors.password">Please enter a password.</div>
+        </div>
+
+        <div class="mb-5">
+          <label for="confirm-password" class="block text-sm font-medium text-[#0a0a0a] mb-1.5">Confirm password</label>
+          <input 
+            class="appearance-none block w-full px-4 py-3 rounded-lg border placeholder-[#a3a3a3] text-[#0a0a0a] focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors sm:text-sm"
+            :class="[formErrors.confirmPassword ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : 'border-[rgba(0,0,0,0.12)] focus:border-[#c9a861] focus:ring-[#c9a861]/20']"
+            id="confirm-password" 
+            type="password" 
+            v-model.trim="formData.confirmPassword" 
+            placeholder="••••••••" 
+            autocomplete="new-password"
+          >
+          <div class="mt-1 text-xs text-red-600" v-if="formErrors.confirmPassword">Your password and confirmation do not match.</div>
+        </div>
+
+        <div class="flex items-start mb-6">
+          <div class="flex items-center h-5">
+            <input 
+              id="terms-agreement" 
+              type="checkbox" 
+              v-model="formData.agreed"
+              class="h-4 w-4 text-[#c9a861] focus:ring-[#c9a861] border-gray-300 rounded cursor-pointer"
+            >
+          </div>
+          <div class="ml-3 text-sm">
+            <label for="terms-agreement" class="font-medium" :class="[formErrors.agreed ? 'text-red-600' : 'text-[#737373]']">
+              I have read &amp; agree to the <a target="_blank" href="/terms" class="text-[#c9a861] hover:text-[#b8956a] underline transition-colors">terms of service</a>.
+            </label>
+          </div>
+        </div>
+
+        <div class="mb-6" v-if="cloudError">
+           <p class="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100" v-if="cloudError==='emailAlreadyInUse'">
+             It looks like there's already an account with your email address. If you forgot your password, you can recover it <a href="password/forgot" class="font-medium underline">here</a>.
+           </p>
+           <p class="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100" v-else>
+             An error occurred. Please try again.
+           </p>
+        </div>
+
+        <div>
+          <ajax-button type="submit" :syncing="syncing" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-[#c9a861] to-[#d4af37] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#c9a861] transition-all transform active:scale-[0.98]">
+            Create account
+          </ajax-button>
+        </div>
+
+      </ajax-form>
+
+      <div class="mt-6 text-center">
+        <p class="text-sm text-[#737373]">
+          Have an account? 
+          <a href="/login" class="font-medium text-[#c9a861] hover:text-[#b8956a] transition-colors">Sign in</a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="sm:mx-auto sm:w-full sm:max-w-md" v-if="cloudSuccess">
+    <div class="bg-white py-10 px-4 shadow-xl border border-[rgba(0,0,0,0.08)] sm:rounded-2xl sm:px-10 text-center">
+      
+      <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+        <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      </div>
+
+      <h1 class="text-2xl font-medium tracking-tight text-[#0a0a0a] mb-4">Check your email!</h1>
+      
+      <div class="space-y-4 text-sm text-[#737373]">
+        <p>Your account is nearly ready. All you have to do is click the link we sent to <strong class="text-[#0a0a0a]">{{formData.emailAddress}}</strong>.</p>
+        <p class="text-xs bg-[#f5f5f4] p-3 rounded-lg border border-[rgba(0,0,0,0.06)]">
+          (You can still access your dashboard now, but some features will be unavailable until we've verified your email address.)
+        </p>
+      </div>
+
+      <div class="mt-8">
+        <a href="/" class="inline-flex w-full justify-center items-center px-4 py-3 border border-[#c9a861] text-sm font-medium rounded-lg text-[#c9a861] bg-white hover:bg-[#c9a861]/5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#c9a861] transition-colors">
+          Go to dashboard
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+<%- /* Expose locals as `window.SAILS_LOCALS` :: */ exposeLocalsToBrowser() %>

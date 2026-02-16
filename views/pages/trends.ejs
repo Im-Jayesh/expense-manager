@@ -1,0 +1,164 @@
+<div class="max-w-7xl mx-auto px-6 py-6 space-y-6 bg-[#fafaf9]">
+  
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    
+    <div class="bg-[#0a0a0a] rounded-[2rem] p-8 text-white shadow-2xl relative overflow-hidden group">
+      <div class="absolute top-0 right-0 w-32 h-32 bg-[#c9a861] opacity-10 blur-3xl group-hover:opacity-30 transition-opacity"></div>
+      <p class="text-[10px] font-bold text-[#737373] uppercase tracking-[0.2em] mb-4">Financial Pulse</p>
+      
+      <div class="flex items-end gap-4">
+        <h3 class="text-4xl font-medium">₹<%= currentBalance.toLocaleString('en-IN') %></h3>
+        <span class="text-xs <%= stability > 20 ? 'text-emerald-500' : 'text-orange-400' %> font-bold mb-1">
+          ↑ <%= stability %>% Stability
+        </span>
+      </div>
+
+      <% let litBars = Math.ceil((burnCapacity / 100) * 12); %>
+      <div class="mt-6 flex gap-1">
+        <% for(let i=0; i<12; i++) { %>
+          <div class="h-1.5 flex-1 rounded-full 
+            <%= i < litBars ? (burnCapacity > 90 ? 'bg-red-500' : 'bg-[#c9a861]') : 'bg-white/10' %>">
+          </div>
+        <% } %>
+      </div>
+      
+      <p class="text-[9px] text-gray-500 mt-3 uppercase tracking-widest font-bold">
+        Current Month: <%= burnCapacity %>% Capacity Used
+      </p>
+    </div>
+
+    <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">
+      <p class="text-[10px] font-bold text-[#737373] uppercase tracking-[0.2em] mb-2">Projected Runway</p>
+      <h3 class="text-4xl font-medium text-[#0a0a0a]"><%= runway %> <span class="text-sm text-gray-400 font-normal">Months</span></h3>
+      <p class="text-xs text-gray-400 mt-2 italic">Based on average monthly net velocity</p>
+    </div>
+
+    <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm relative overflow-hidden">
+      <p class="text-[10px] font-bold text-[#737373] uppercase tracking-[0.2em] mb-2">Wealth Destination</p>
+      <h3 class="text-4xl font-medium text-[#c9a861]">₹<%= projection[2].toLocaleString('en-IN') %></h3>
+      <p class="text-xs text-gray-400 mt-2">Estimated value in 60 days</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+      <div>
+        <h2 class="text-xl font-medium text-[#0a0a0a]">Cash Flow Trajectory</h2>
+        <p class="text-xs text-gray-400">Navigate your financial history across dimensions</p>
+      </div>
+      <div class="flex bg-[#f5f5f4] p-1 rounded-xl">
+        <button onclick="updateTimeframe('monthly')" id="btn-monthly" class="time-btn px-6 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all bg-white shadow-sm text-[#0a0a0a]">Monthly</button>
+        <button onclick="updateTimeframe('quarterly')" id="btn-quarterly" class="time-btn px-6 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all text-[#737373]">Quarterly</button>
+        <button onclick="updateTimeframe('yearly')" id="btn-yearly" class="time-btn px-6 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all text-[#737373]">Yearly</button>
+      </div>
+    </div>
+
+    <div class="relative h-[350px]">
+      <canvas id="mainChart"></canvas>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm h-[400px]">
+        <h3 class="text-[10px] font-bold text-[#737373] uppercase tracking-[0.2em] mb-8">Expense Distribution</h3>
+        <canvas id="donutChart"></canvas>
+    </div>
+    <div class="bg-[#0a0a0a] rounded-[2.5rem] p-8 text-white shadow-2xl h-[400px]">
+        <h3 class="text-[10px] font-bold text-[#737373] uppercase tracking-[0.2em] mb-8">Predictive Wealth Velocity</h3>
+        <canvas id="velocityChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  const fullData = <%- JSON.stringify(allData) %>;
+  let mainChart;
+
+  function updateTimeframe(type) {
+    document.querySelectorAll('.time-btn').forEach(btn => {
+      btn.classList.remove('bg-white', 'shadow-sm', 'text-[#0a0a0a]');
+      btn.classList.add('text-[#737373]');
+    });
+    document.getElementById('btn-' + type).classList.add('bg-white', 'shadow-sm', 'text-[#0a0a0a]');
+    document.getElementById('btn-' + type).classList.remove('text-[#737373]');
+
+    const data = fullData[type];
+    const labels = Object.keys(data);
+    const income = labels.map(l => data[l].income);
+    const expense = labels.map(l => data[l].expense);
+
+    mainChart.data.labels = labels;
+    mainChart.data.datasets[0].data = income;
+    mainChart.data.datasets[1].data = expense;
+    mainChart.update('active');
+  }
+
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  mainChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(fullData.monthly),
+      datasets: [
+        { label: 'Inflow', data: Object.keys(fullData.monthly).map(k => fullData.monthly[k].income), backgroundColor: '#c9a861', borderRadius: 10, barThickness: 20 },
+        { label: 'Outflow', data: Object.keys(fullData.monthly).map(k => fullData.monthly[k].expense), backgroundColor: '#0a0a0a', borderRadius: 10, barThickness: 20 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color: 'rgba(0,0,0,0.03)' }, border: { display: false } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: <%- JSON.stringify(categoryData.labels) %>,
+      datasets: [{
+        data: <%- JSON.stringify(categoryData.values) %>,
+        backgroundColor: ['#0a0a0a', '#c9a861', '#444', '#888', '#555'],
+        borderWidth: 0,
+        cutout: '85%'
+      }]
+    },
+    options: { 
+      maintainAspectRatio: false, 
+      plugins: { 
+        legend: { 
+          position: 'right', 
+          labels: { boxWidth: 10, font: { size: 10, weight: 'bold' }, padding: 20 } 
+        } 
+      } 
+    }
+  });
+
+  const vCtx = document.getElementById('velocityChart').getContext('2d');
+  new Chart(vCtx, {
+    type: 'line',
+    data: {
+      labels: [...<%- JSON.stringify(velocityData.map(d => new Date(d.x).toLocaleDateString())) %>, 'Next Month', 'Future'],
+      datasets: [{
+        label: 'Velocity',
+        data: [...<%- JSON.stringify(velocityData.map(d => d.y)) %>, <%- projection[1] %>, <%- projection[2] %>],
+        borderColor: '#c9a861',
+        borderWidth: 3,
+        tension: 0.4,
+        pointRadius: 0,
+        segment: {
+          borderDash: ctx => ctx.p0DataIndex >= <%- velocityData.length %> ? [5, 5] : undefined
+        }
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { display: false }, y: { display: false } }
+    }
+  });
+</script>
