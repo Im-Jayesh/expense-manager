@@ -10,6 +10,10 @@
  */
 
 module.exports.sockets = {
+  onlyAllowOrigins: [
+    "https://poof-expenses.onrender.com",
+    "*"
+  ],
 
   /***************************************************************************
   *                                                                          *
