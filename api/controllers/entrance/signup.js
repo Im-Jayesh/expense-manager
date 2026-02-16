@@ -1,162 +1,87 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = {
-
   friendlyName: 'Signup',
 
-  description: 'Sign up for a new user account.',
-
-  extendedDescription:
-`This creates a new user record in the database, signs in the requesting user agent
-by modifying its [session](https://sailsjs.com/documentation/concepts/sessions), and
-(if emailing with Mailgun is enabled) sends an account verification email.
-
-If a verification email is sent, the new user's account is put in an "unconfirmed" state
-until they confirm they are using a legitimate email address (by clicking the link in
-the account verification message.)`,
-
   inputs: {
-
-    emailAddress: {
-      required: true,
-      type: 'string',
-      isEmail: true,
-      description: 'The email address for the new account, e.g. m@example.com.',
-      extendedDescription: 'Must be a valid email address.',
-    },
-
-    password: {
-      required: true,
-      type: 'string',
-      maxLength: 200,
-      example: 'passwordlol',
-      description: 'The unencrypted password to use for the new account.'
-    },
-
-    fullName:  {
-      required: true,
-      type: 'string',
-      example: 'Frida Kahlo de Rivera',
-      description: 'The user\'s full name.',
-    }
-
+    emailAddress: { required: true, type: 'string', isEmail: true },
+    password: { required: true, type: 'string', maxLength: 200 },
+    fullName: { required: true, type: 'string' }
   },
 
   exits: {
-
     success: {
-      description: 'New user account was created successfully.'
+      responseType: 'redirect' // Tell the browser to move to a new page
     },
-
-    invalid: {
-      responseType: 'badRequest',
-      description: 'The provided fullName, password and/or email address are invalid.',
-      extendedDescription: 'If this request was sent from a graphical user interface, the request '+
-      'parameters should have been validated/coerced _before_ they were sent.'
-    },
-
     emailAlreadyInUse: {
-      statusCode: 409,
-      description: 'The provided email address is already in use.',
+      // If email exists, redirect back to signup with an error flag
+      responseType: 'redirect' 
     },
-
+    invalid: {
+      responseType: 'badRequest'
+    }
   },
 
-  fn: async function ({emailAddress, password, fullName}) {
-
+  fn: async function ({ emailAddress, password, fullName }) {
     var newEmailAddress = emailAddress.toLowerCase();
 
     // 1. Create the User Record
-    var newUserRecord = await User.create(_.extend({
-      fullName,
-      emailAddress: newEmailAddress,
-      password: await sails.helpers.passwords.hashPassword(password),
-      tosAcceptedByIp: this.req.ip
-    }, sails.config.custom.verifyEmailAddresses? {
-      emailProofToken: await sails.helpers.strings.random('url-friendly'),
-      emailProofTokenExpiresAt: Date.now() + sails.config.custom.emailProofTokenTTL,
-      emailStatus: 'unconfirmed'
-    }:{}))
-    .intercept('E_UNIQUE', 'emailAlreadyInUse')
-    .intercept({name: 'UsageError'}, 'invalid')
-    .fetch();
+    try {
+      var newUserRecord = await User.create(_.extend({
+        fullName,
+        emailAddress: newEmailAddress,
+        password: await sails.helpers.passwords.hashPassword(password),
+        tosAcceptedByIp: this.req.ip
+      }, sails.config.custom.verifyEmailAddresses ? {
+        emailProofToken: await sails.helpers.strings.random('url-friendly'),
+        emailProofTokenExpiresAt: Date.now() + sails.config.custom.emailProofTokenTTL,
+        emailStatus: 'unconfirmed'
+      } : {}))
+      .fetch();
 
-    // 2. Create the Default Account
-    await Account.create({
-      name: "Default Account",
-      owner: newUserRecord.id
-    });
-
-    // 3. Billing Logic (Optional - kept from original)
-    if (sails.config.custom.enableBillingFeatures) {
-      let stripeCustomerId = await sails.helpers.stripe.saveBillingInfo.with({
-        emailAddress: newEmailAddress
-      }).timeout(5000).retry();
-      await User.updateOne({id: newUserRecord.id})
-      .set({
-        stripeCustomerId
+      // 2. Create the Default Account
+      await Account.create({
+        name: "Default Account",
+        owner: newUserRecord.id
       });
-    }
 
-    // 4. Standard Session Login
-    this.req.session.userId = newUserRecord.id;
+      // 3. Session & JWT Logic
+      this.req.session.userId = newUserRecord.id;
 
-    // ---------------------------------------------------------
-    // JWT & COOKIE LOGIC (Matched from Login.js)
-    // ---------------------------------------------------------
-    
-    // Generate Payload
-    const payload = {
-      userId: newUserRecord.id
-    };
+      const token = jwt.sign(
+        { userId: newUserRecord.id },
+        sails.config.custom.jwtSecret,
+        { expiresIn: "2d" }
+      );
 
-    // Sign Token (Defaulting to 2d since signup has no rememberMe)
-    const token = jwt.sign(payload, 
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "2d" 
+      this.res.cookie('jwt', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 2 * 24 * 60 * 60 * 1000
+      });
+
+      // 4. Handle Email Verification (if enabled)
+      if (sails.config.custom.verifyEmailAddresses) {
+        await sails.helpers.sendTemplateEmail.with({
+          to: newEmailAddress,
+          subject: 'Please confirm your account',
+          template: 'email-verify-account',
+          templateData: {
+            fullName,
+            token: newUserRecord.emailProofToken
+          }
+        });
       }
-    );
 
-    // Calculate Max Age (2 days in ms)
-    const maxAge = 2 * 24 * 60 * 60 * 1000;
+      // SUCCESS: Go to the dashboard
+      throw { success: '/dashboard' };
 
-    // Set JWT as HttpOnly cookie
-    this.res.cookie('jwt', token, {
-      httpOnly: true,
-      secure: (process.env.NODE_ENV === 'production'),
-      sameSite: 'lax',
-      maxAge
-    });
-
-    // ---------------------------------------------------------
-
-    // Broadcast session change
-    if (sails.hooks.sockets) {
-      await sails.helpers.broadcastSessionChange(this.req);
+    } catch (err) {
+      if (err.code === 'E_UNIQUE') {
+        throw { emailAlreadyInUse: '/signup?error=emailInUse' };
+      }
+      throw err;
     }
-
-    // Send Verification Email (if enabled)
-    if (sails.config.custom.verifyEmailAddresses) {
-      await sails.helpers.sendTemplateEmail.with({
-        to: newEmailAddress,
-        subject: 'Please confirm your account',
-        template: 'email-verify-account',
-        templateData: {
-          fullName,
-          token: newUserRecord.emailProofToken
-        }
-      });
-    } else {
-      sails.log.info('Skipping new account email verification... (since `verifyEmailAddresses` is disabled)');
-    }
-
-    // Return the token (and user object if your frontend needs it)
-    return { 
-      token, 
-      user: newUserRecord 
-    };
-
   }
-
 };
