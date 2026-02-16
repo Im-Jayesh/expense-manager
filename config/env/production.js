@@ -1,7 +1,13 @@
+// config/env/production.js
 module.exports = {
 
-  // 1. Tell Sails to be more patient (80 seconds instead of 40)
-  hookTimeout: 90000, 
+  // Give it 3 full minutes to wake up
+  hookTimeout: 180000, 
+
+  // Disable Grunt in production to save time and memory
+  hooks: {
+    grunt: false
+  },
 
   datastores: {
     default: {
@@ -11,7 +17,7 @@ module.exports = {
   },
 
   models: {
-    migrate: 'safe', // MUST be safe for production
+    migrate: 'safe',
   },
 
   sockets: {
