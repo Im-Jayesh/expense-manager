@@ -1,19 +1,58 @@
-<div id="login" class="min-h-screen bg-[#fafaf9] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+<div id="login" class="min-h-screen bg-[#fafaf9] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans text-[#0a0a0a]">
   <div class="sm:mx-auto sm:w-full sm:max-w-md">
-    <div class="bg-white py-8 px-4 shadow-xl border border-[rgba(0,0,0,0.08)] sm:rounded-2xl sm:px-10">
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-medium tracking-tight text-[#0a0a0a]">Sign in to your account</h1>
+      <p class="mt-2 text-sm text-[#737373]">Welcome back</p>
+    </div>
+
+    <div class="bg-white py-8 px-4 shadow-xl border border-[rgba(0,0,0,0.08)] sm:rounded-2xl sm:px-10 relative">
       <form action="/login" method="POST">
+        
         <div class="mb-5">
-          <label class="block text-sm font-medium mb-1.5">Email address</label>
-          <input name="emailAddress" type="email" required class="block w-full px-4 py-3 rounded-lg border border-[rgba(0,0,0,0.12)]">
+          <label for="email" class="block text-sm font-medium text-[#0a0a0a] mb-1.5">Email address</label>
+          <input 
+            type="email" 
+            name="emailAddress" 
+            id="email"
+            required
+            class="appearance-none block w-full px-4 py-3 rounded-lg border border-[rgba(0,0,0,0.12)] placeholder-[#a3a3a3] text-[#0a0a0a] focus:outline-none focus:ring-2 focus:ring-[#c9a861]/20 focus:border-[#c9a861] transition-colors sm:text-sm"
+            placeholder="sturgeon@example.com"
+          >
         </div>
+
         <div class="mb-5">
-          <label class="block text-sm font-medium mb-1.5">Password</label>
-          <input name="password" type="password" required class="block w-full px-4 py-3 rounded-lg border border-[rgba(0,0,0,0.12)]">
+          <label for="password" class="block text-sm font-medium text-[#0a0a0a] mb-1.5">Password</label>
+          <input 
+            type="password" 
+            name="password" 
+            id="password"
+            required
+            class="appearance-none block w-full px-4 py-3 rounded-lg border border-[rgba(0,0,0,0.12)] placeholder-[#a3a3a3] text-[#0a0a0a] focus:outline-none focus:ring-2 focus:ring-[#c9a861]/20 focus:border-[#c9a861] transition-colors sm:text-sm"
+            placeholder="••••••••"
+          >
         </div>
-        <button type="submit" class="w-full py-3 px-4 rounded-lg text-white bg-gradient-to-r from-[#c9a861] to-[#d4af37]">
+
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center">
+            <input id="remember" name="rememberMe" type="checkbox" class="h-4 w-4 text-[#c9a861] focus:ring-[#c9a861] border-gray-300 rounded cursor-pointer">
+            <label for="remember" class="ml-2 block text-sm text-[#0a0a0a]">Remember me</label>
+          </div>
+          <div class="text-sm">
+            <a href="/password/forgot" class="font-medium text-[#c9a861] hover:text-[#b8956a] transition-colors">Forgot your password?</a>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-[#c9a861] to-[#d4af37] hover:shadow-md transition-all transform active:scale-[0.98]">
           Sign in
         </button>
+
       </form>
+
+      <div class="mt-6 text-center">
+        <p class="text-sm text-[#737373]">
+          Don't have an account? <a href="/signup" class="font-medium text-[#c9a861] hover:text-[#b8956a] underline">Sign up</a>
+        </p>
+      </div>
     </div>
   </div>
 </div>
