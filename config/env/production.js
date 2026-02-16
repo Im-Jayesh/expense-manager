@@ -14,7 +14,7 @@ module.exports = {
   models: {
     // Note: Change to 'alter' only for the very first deployment to build collections, 
     // then switch back to 'safe' to protect your data.
-    migrate: 'safe',
+    migrate: 'alter',
   },
 
   blueprints: {
