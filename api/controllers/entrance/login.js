@@ -4,10 +4,11 @@ module.exports = {
   friendlyName: 'Login',
 
   inputs: {
-    emailAddress: { type: 'string', required: true },
-    password: { type: 'string', required: true },
-    rememberMe: { type: 'boolean' }
-  },
+  emailAddress: { type: 'string', required: true },
+  password: { type: 'string', required: true },
+  // Change type to 'string' because HTML forms send "on" or undefined
+  rememberMe: { type: 'string' } 
+},
 
   exits: {
     success: {
@@ -22,43 +23,42 @@ module.exports = {
   },
 
   fn: async function ({ emailAddress, password, rememberMe }) {
-    // 1. Look up user
-    var userRecord = await User.findOne({
-      emailAddress: emailAddress.toLowerCase(),
-    });
+  // Convert the string "on" into a real boolean
+  const isRememberMe = rememberMe === 'on';
 
-    if (!userRecord) {
-      // If no user, send them back to login page with an error flag
-      throw { success: '/login?error=badCombo' }; 
-    }
+  // 1. Look up user...
+  var userRecord = await User.findOne({
+    emailAddress: emailAddress.toLowerCase(),
+  });
 
-    // 2. Check password
-    try {
-      await sails.helpers.passwords.checkPassword(password, userRecord.password);
-    } catch (err) {
-      throw { success: '/login?error=badCombo' };
-    }
+  if (!userRecord) { throw { badCombo: '/login?error=badCombo' }; }
 
-    // 3. Generate JWT
-    const token = jwt.sign(
-      { userId: userRecord.id },
-      sails.config.custom.jwtSecret, // Use the config we set up earlier
-      { expiresIn: rememberMe ? "30d" : "2d" }
-    );
-
-    // 4. Set Cookie (This makes it "work" without Vue/JS)
-    const maxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 2 * 24 * 60 * 60 * 1000;
-    this.res.cookie('jwt', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge
-    });
-
-    // 5. Traditional Session fallback (Good for Sails policy support)
-    this.req.session.userId = userRecord.id;
-
-    // 6. REDIRECT to the dashboard
-    throw { success: '/dashboard' };
+  // 2. Check password...
+  try {
+    await sails.helpers.passwords.checkPassword(password, userRecord.password);
+  } catch (err) {
+    throw { badCombo: '/login?error=badCombo' };
   }
+
+  // 3. Generate JWT (Using our new isRememberMe boolean)
+  const token = jwt.sign(
+    { userId: userRecord.id },
+    sails.config.custom.jwtSecret,
+    { expiresIn: isRememberMe ? "30d" : "2d" }
+  );
+
+  // 4. Set Cookie
+  const maxAge = isRememberMe ? 30*24*60*60*1000 : 2*24*60*60*1000;
+  this.res.cookie('jwt', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge
+  });
+
+  this.req.session.userId = userRecord.id;
+
+  // 5. Redirect to dashboard
+  throw { success: '/accounts' };
+}
 };

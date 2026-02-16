@@ -4,10 +4,12 @@ module.exports = {
   friendlyName: 'Signup',
 
   inputs: {
-    emailAddress: { required: true, type: 'string', isEmail: true },
-    password: { required: true, type: 'string', maxLength: 200 },
-    fullName: { required: true, type: 'string' }
-  },
+  emailAddress: { required: true, type: 'string', isEmail: true },
+  password: { required: true, type: 'string', maxLength: 200 },
+  fullName: { required: true, type: 'string' },
+  // CHANGE THIS:
+  agreed: { type: 'string' } 
+},
 
   exits: {
     success: {
