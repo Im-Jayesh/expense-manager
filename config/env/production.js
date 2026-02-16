@@ -1,8 +1,7 @@
-/**
- * Production environment settings for "Poof!"
- */
-
 module.exports = {
+
+  // 1. Tell Sails to be more patient (80 seconds instead of 40)
+  hookTimeout: 90000, 
 
   datastores: {
     default: {
@@ -12,28 +11,7 @@ module.exports = {
   },
 
   models: {
-    // Note: Change to 'alter' only for the very first deployment to build collections, 
-    // then switch back to 'safe' to protect your data.
-    migrate: 'safe',
-  },
-
-  blueprints: {
-    shortcuts: false,
-  },
-
-  security: {
-    cors: {
-      // Replace with your actual Render URL after your first deployment
-      // allowOrigins: ['https://poof-expenses.onrender.com'],
-    },
-  },
-
-  session: {
-    // secret: process.env.SESSION_SECRET,
-    cookie: {
-      secure: true, // Required because Render provides HTTPS
-      maxAge: 24 * 60 * 60 * 1000,  // 24 hours
-    },
+    migrate: 'safe', // MUST be safe for production
   },
 
   sockets: {
@@ -41,25 +19,21 @@ module.exports = {
       "https://poof-expenses.onrender.com",
       "https://www.poof-expenses.onrender.com"
     ],
-    // onlyAllowOrigins: ['https://poof-expenses.onrender.com'],
-  },
-
-  log: {
-    level: 'info'
   },
 
   http: {
-    cache: 365.25 * 24 * 60 * 60 * 1000, // One year
-    trustProxy: true, // CRITICAL for Render/Load Balancers to handle cookies correctly
+    trustProxy: true,
+  },
+
+  session: {
+    cookie: {
+      secure: true,
+    },
   },
 
   custom: {
-    baseUrl: 'https://poof-expenses.onrender.com', // Update this after deployment
-    internalEmailAddress: 'jamnasuthar1007@gmail.com',
-    
-    // JWT Configuration
+    baseUrl: 'https://poof-expenses.onrender.com',
     jwtSecret: process.env.JWT_SECRET,
     jwtExpires: '24h'
   },
-
 };
