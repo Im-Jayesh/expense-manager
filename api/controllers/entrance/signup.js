@@ -77,7 +77,7 @@ module.exports = {
       }
 
       // SUCCESS: Go to the dashboard
-      throw { success: '/dashboard' };
+      return this.res.redirect('/login');
 
     } catch (err) {
       if (err.code === 'E_UNIQUE') {

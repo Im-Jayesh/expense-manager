@@ -59,6 +59,6 @@ module.exports = {
   this.req.session.userId = userRecord.id;
 
   // 5. Redirect to dashboard
-  throw { success: '/accounts' };
+  return this.res.redirect('/accounts');
 }
 };
